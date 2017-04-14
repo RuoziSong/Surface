@@ -100,7 +100,7 @@ function(input, output, session) {
   })
   
   # Show a popup at the given location
-  showResPopup <- function(name, lat, ing) {
+  showResPopup <- function(name, lat, lng) {
     selectedRes <- zipdata[zipdata$DBA == name,]
     content <- as.character(tagList(
       tags$h4("Restaurant name: ", selectedRes$DBA),
@@ -110,7 +110,7 @@ function(input, output, session) {
       sprintf("Restaurant type: %s", selectedRes$CUISINE.DESCRIPTION), tags$br(),
       sprintf("Phone: %s",selectedRes$PHONE), tags$br()
     ))
-    leafletProxy("map") %>% addPopups(ing, lat, content, layerId = name)
+    leafletProxy("map") %>% addPopups(lng, lat, content, layerId = name)
   }
   
   # When map is clicked, show a popup with city info
