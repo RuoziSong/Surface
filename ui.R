@@ -117,6 +117,16 @@ navbarPage("Superzip", id="nav",
                         ),
                         
                         leafletOutput("map", width="70%", height="60%"),
+                        absolutePanel(id = "pic1", class = "panel panel-default", fixed = TRUE,
+                                      draggable = TRUE, top = "65%", left = "1%", right = "auto", bottom = "1%",
+                                      width = "32%", height = "auto",
+                                      plotOutput("scorebyTime", height = 200)
+                        ),
+                        absolutePanel(id = "pic1", class = "panel panel-default", fixed = TRUE,
+                                      draggable = TRUE, top = "65%", left = "37.5%", right = "auto", bottom = "1%",
+                                      width = "32%", height = "auto",
+                                      plotOutput("scorebyViolationCode", height = 200)
+                        ),
                         
                         # Shiny versions prior to 0.11 should use class="modal" instead.
                         absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
