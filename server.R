@@ -93,52 +93,52 @@ function(input, output, session) {
     else{
       # Color and palette are treated specially in the "superzip" case, because
       # the values are categorical instead of continuous.
-    # colorData <- ifelse(zipdata$centile >= (100 - input$threshold), "yes", "no")
-    # pal <- colorFactor("viridis", colorData)
-    
-    #colorData <- zipdata[[locationBy]]
-    #pal <- colorBin("viridis", colorData, 7, pretty = FALSE)
-    # 
-    # 
-    # if (sizeBy == "superzip") {
-    #   # Radius is treated specially in the "superzip" case.
-    #   radius <- ifelse(zipdata$centile >= (100 - input$threshold), 30000, 3000)
-    # } else {
-    #   radius <- zipdata[[sizeBy]] / max(zipdata[[sizeBy]]) * 30000
-    # }
-    output$map <- renderLeaflet({
-      leaflet() %>%
-        addTiles(
-          urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-          attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>%
-        setView(lng = mean(tmpdata$ing), lat = mean(tmpdata$lat), zoom = 12)
-    })
-    zipsInBounds <- reactive({
-      if (is.null(input$map_bounds))
-        return(tmpdata[FALSE,])
-      bounds <- input$map_bounds
-      latRng <- range(bounds$north, bounds$south)
-      lngRng <- range(bounds$east, bounds$west)
-
-      subset(tmpdata,
-             latitude >= latRng[1] & latitude <= latRng[2] &
-               longitude >= lngRng[1] & longitude <= lngRng[2])
-    })
-    leafletProxy("map", data = tmpdata) %>%
-      clearShapes() %>%
-      clearMarkers() %>%
-      addMarkers(~ing, ~lat)
+      # colorData <- ifelse(zipdata$centile >= (100 - input$threshold), "yes", "no")
+      # pal <- colorFactor("viridis", colorData)
+      
+      #colorData <- zipdata[[locationBy]]
+      #pal <- colorBin("viridis", colorData, 7, pretty = FALSE)
+      # 
+      # 
+      # if (sizeBy == "superzip") {
+      #   # Radius is treated specially in the "superzip" case.
+      #   radius <- ifelse(zipdata$centile >= (100 - input$threshold), 30000, 3000)
+      # } else {
+      #   radius <- zipdata[[sizeBy]] / max(zipdata[[sizeBy]]) * 30000
+      # }
+      output$map <- renderLeaflet({
+        leaflet() %>%
+          addTiles(
+            urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+            attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+          ) %>%
+          setView(lng = mean(tmpdata$ing), lat = mean(tmpdata$lat), zoom = 12)
+      })
+      zipsInBounds <- reactive({
+        if (is.null(input$map_bounds))
+          return(tmpdata[FALSE,])
+        bounds <- input$map_bounds
+        latRng <- range(bounds$north, bounds$south)
+        lngRng <- range(bounds$east, bounds$west)
+        
+        subset(tmpdata,
+               latitude >= latRng[1] & latitude <= latRng[2] &
+                 longitude >= lngRng[1] & longitude <= lngRng[2])
+      })
+      leafletProxy("map", data = tmpdata) %>%
+        clearShapes() %>%
+        clearMarkers() %>%
+        addMarkers(~ing, ~lat,layerId=~CAMIS)
       #addCircles(~ing, ~lat, radius=100, layerId=~ZIPCODE,stroke=FALSE, fillOpacity=0.4)
       #            stroke=FALSE, fillOpacity=0.4) %>%
       # addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
       #           layerId="colorLegend")
     }
   })
-  
+
   # Show a popup at the given location
   showResPopup <- function(name, lat, lng) {
-    selectedRes <- zipdata[zipdata$DBA == name,]
+    selectedRes <- zipdata[zipdata$CAMIS == name,][1,]
     content <- as.character(tagList(
       tags$h4("Restaurant name: ", selectedRes$DBA),
       tags$strong(HTML(sprintf("%s %s, %s %s",
@@ -153,12 +153,12 @@ function(input, output, session) {
   # When map is clicked, show a popup with city info
   observe({
     leafletProxy("map") %>% clearPopups()
-    event <- input$map_shape_click
+    event <- input$map_marker_click
     if (is.null(event))
       return()
-    
     isolate({
-      showResPopup(event$DBA, event$lat, event$ing)
+      showResPopup(event$id, event$lat, event$lng)
+      
     })
   })
   
