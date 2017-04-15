@@ -10,18 +10,19 @@ vars <- c(
 )
 
 type <- c(
-  "Afghan" = "afghan",
-  "African" = "african",
-  "American" = "american",
-  "Armenian" = "armenian",
-  "Asian" = "asian",
-  "Australian" = "australian",
-  "Bagels/Pretzels" = "bagels",
-  "Bakery" = "bakery",
-  "Bangladeshi" = "bangladeshi",
-  "Barbecue" = "barbecue",
-  "Bottled beverages, including water, sodas, juices, etc." = "beverages",
-  "Brazilian" = "brazilian",
+  "Any" = "Any",
+  "Afghan" = "Afghan",
+  "African" = "African",
+  "American" = "American",
+  "Armenian" = "Armenian",
+  "Asian" = "Asian",
+  "Australian" = "Australian",
+  "Bagels/Pretzels" = "Bagels",
+  "Bakery" = "Bakery",
+  "Bangladeshi" = "Bangladeshi",
+  "Barbecue" = "Barbecue",
+  "Bottled beverages, including water, sodas, juices, etc." = "Bottled beverages, including water, sodas, juices, etc.",
+  "Brazilian" = "Brazilian",
   "CafÃ©/Coffee/Tea" = "CafÃ©/Coffee/Tea",
   "Cajun" = "Cajun",
   "Californian" = "Californian",
@@ -96,76 +97,84 @@ type <- c(
   "Vietnamese/Cambodian/Malaysia"	= "Vietnamese/Cambodian/Malaysia"
 )
 
-
+loc <- c(
+                       MANHATTAN = "MA",
+                       QUEENS = "QU",
+                       ISLAND = "IS",
+                       BRONX = "BX",
+                       BROOKLYN = "BK"
+)
 navbarPage("Superzip", id="nav",
-
-  tabPanel("Interactive map",
-    
-    div(class="outer",
-
-      tags$head(
-        # Include our custom CSS
-        includeCSS("styles.css"),
-        includeScript("gomap.js")
-      ),
-      
-      leafletOutput("map", width="70%", height="60%"),
-
-      # Shiny versions prior to 0.11 should use class="modal" instead.
-      absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
-        draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
-        width = "25%", height = "auto",
-
-        h2("ZIP explorer"),
-
-        selectInput("color", "Color", vars),
-        textInput("restName", "Name", "Name"),
-        checkboxGroupInput("directions", "Show",
-                           choices = c(
-                             MANHATTAN = "MA",
-                             QUEENS = "QU",
-                             ISLAND = "IS",
-                             BRONX = "BX",
-                             BROOKLYN = "BK"
-                           )),
-        selectInput("type", "Resturant Type", type),
-        selectInput("size", "Size", vars, selected = "adultpop"),
-        conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
-          # Only prompt for threshold when coloring or sizing by superzip
-          numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
-        ),
-        plotOutput("scatterCollegeIncome", height = 250)
-      )
-    )
-  ),
-
-  tabPanel("Data explorer",
-    fluidRow(
-      column(3,
-        selectInput("states", "States", c("All states"="", structure(state.abb, names=state.name), "Washington, DC"="DC"), multiple=TRUE)
-      ),
-      column(3,
-        conditionalPanel("input.states",
-          selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
-        )
-      ),
-      column(3,
-        conditionalPanel("input.states",
-          selectInput("zipcodes", "Zipcodes", c("All zipcodes"=""), multiple=TRUE)
-        )
-      )
-    ),
-    fluidRow(
-      column(1,
-        numericInput("minScore", "Min score", min=0, max=100, value=0)
-      ),
-      column(1,
-        numericInput("maxScore", "Max score", min=0, max=100, value=100)
-      )
-    ),
-    hr(),
-    DT::dataTableOutput("ziptable")
-  ),
-
-  conditionalPanel("false", icon("crosshair"))
+           
+           tabPanel("Interactive map",
+                    
+                    div(class="outer",
+                        
+                        tags$head(
+                          # Include our custom CSS
+                          includeCSS("styles.css"),
+                          includeScript("gomap.js")
+                        ),
+                        
+                        leafletOutput("map", width="70%", height="60%"),
+                        
+                        # Shiny versions prior to 0.11 should use class="modal" instead.
+                        absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                                      draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+                                      width = "25%", height = "auto",
+                                      
+                                      h2("ZIP explorer"),
+                                      
+                                      #selectInput("color", "Color", vars),
+                                      textInput("restName", "Name", "Name"),
+                                      #selectInput("directions", "Resturant Type", loc),
+                                      checkboxGroupInput("directions", "Show",
+                                                         choices = c(
+                                                           MANHATTAN = "MANHATTAN",
+                                                           QUEENS = "QUEENS",
+                                                           ISLAND = "STATEN ISLAND",
+                                                           BRONX = "BRONX",
+                                                           BROOKLYN = "BROOKLYN"
+                                                         )),
+                                      selectInput("type", "Resturant Type", type),
+                                      actionButton(inputId = "click",label = "Search"),
+                                      #selectInput("size", "Size", vars, selected = "adultpop"),
+                                      conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
+                                                       # Only prompt for threshold when coloring or sizing by superzip
+                                                       numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
+                                      ),
+                                      plotOutput("scatterCollegeIncome", height = 250)
+                        )
+                    )
+           ),
+           
+           tabPanel("Data explorer",
+                    fluidRow(
+                      column(3,
+                             selectInput("states", "States", c("All states"="", structure(state.abb, names=state.name), "Washington, DC"="DC"), multiple=TRUE)
+                      ),
+                      column(3,
+                             conditionalPanel("input.states",
+                                              selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
+                             )
+                      ),
+                      column(3,
+                             conditionalPanel("input.states",
+                                              selectInput("zipcodes", "Zipcodes", c("All zipcodes"=""), multiple=TRUE)
+                             )
+                      )
+                    ),
+                    fluidRow(
+                      column(1,
+                             numericInput("minScore", "Min score", min=0, max=100, value=0)
+                      ),
+                      column(1,
+                             numericInput("maxScore", "Max score", min=0, max=100, value=100)
+                      )
+                    ),
+                    hr(),
+                    DT::dataTableOutput("ziptable")
+           ),
+           
+           conditionalPanel("false", icon("crosshair"))
 )
