@@ -67,21 +67,30 @@ function(input, output, session) {
   
   
   observeEvent(input$click,{
-    if (input$type == "any"){
-      tmpdata <- zipdata
+    tmpdata<- zipdata
+    if (input$type != "Any"){
+      tmpdata<-tmpdata[tmpdata[, "CUISINE.DESCRIPTION"] == input$type,]
+    }
+    if (!is.null(input$directions)){
+      tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
+    }
+    if (input$zipcode!=""){
+      tmpdata<-tmpdata[tmpdata[, "ZIPCODE"] == input$zipcode,]
+    }
+    if (input$restName!=""){
+      tmpdata<-tmpdata[grepl(input$restName, tmpdata$DBA),]
+    }
+    if (nrow(tmpdata)==0){
+      output$map <- renderLeaflet({
+        leaflet() %>%
+          addTiles(
+            urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+            attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+          ) %>%
+          setView(lng = -74.0059, lat = 40.7128, zoom = 12)
+      })
     }
     else{
-      tmpdata<-zipdata[zipdata[, "CUISINE.DESCRIPTION"] == input$type,]
-    }
-    tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
-    
-    #tmpdata <- tmpdata[tmpdata$DBA %like%  input$restName,]
-    zipcodeBy <- input$zipcode
-    #tmpdata<-tmpdata[grepl(input$restName, tmpdata$DBA),]
-    #if (is.na(tmpdata)){
-    #  output$map <- "Not Found"
-    #}
-    #else{
       # Color and palette are treated specially in the "superzip" case, because
       # the values are categorical instead of continuous.
     # colorData <- ifelse(zipdata$centile >= (100 - input$threshold), "yes", "no")
@@ -111,19 +120,20 @@ function(input, output, session) {
       bounds <- input$map_bounds
       latRng <- range(bounds$north, bounds$south)
       lngRng <- range(bounds$east, bounds$west)
-      
+
       subset(tmpdata,
              latitude >= latRng[1] & latitude <= latRng[2] &
                longitude >= lngRng[1] & longitude <= lngRng[2])
     })
     leafletProxy("map", data = tmpdata) %>%
       clearShapes() %>%
+      clearMarkers() %>%
       addMarkers(~ing, ~lat)
       #addCircles(~ing, ~lat, radius=100, layerId=~ZIPCODE,stroke=FALSE, fillOpacity=0.4)
       #            stroke=FALSE, fillOpacity=0.4) %>%
       # addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
       #           layerId="colorLegend")
-    #}
+    }
   })
   
   # Show a popup at the given location
@@ -148,7 +158,7 @@ function(input, output, session) {
       return()
     
     isolate({
-      showResPopup(event$name, event$lat, event$lng)
+      showResPopup(event$DBA, event$lat, event$ing)
     })
   })
   
