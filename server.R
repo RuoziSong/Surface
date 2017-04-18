@@ -3,6 +3,8 @@ library(RColorBrewer)
 library(scales)
 library(lattice)
 library(dplyr)
+library(ggplot2)
+library(tidyverse)
 
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 set.seed(100)
@@ -159,6 +161,32 @@ function(input, output, session) {
     isolate({
       showResPopup(event$id, event$lat, event$lng)
       
+      #Show plot1
+      output$scorebyTime <- renderPlot({
+        if (is.null(event$id))
+          return(NULL)
+        restByTime <- restByTimeData[restByTimeData$restID==event$id,]
+        print(ggplot(restByTime, aes(x = time, y = score))+geom_line())
+      })
+      #Show plot2
+      output$scorebyViolationCode <- renderPlot({
+        if (is.null(event$id))
+          return(NULL)
+        restById = cleanData[cleanData$CAMIS == event$id, ]
+        restScoreById = restByIdData[restByIdData$restId == event$id,]
+        restType = unique(restById$CUISINE.DESCRIPTION)
+        restZip = unique(restById$ZIPCODE)
+        restByZipType = restByZipTypeData[restByZipTypeData$ZipCode==restZip & restByZipTypeData$Type==restType,]
+        codeCount = restById%>%group_by(VIOLATION.CODE) %>% summarise(count=n())
+        codeCount = codeCount[order(-codeCount$count),]
+        if(dim(codeCount)[1] > 5)
+          codeCount = codeCount[1:5,]
+        rstByZipType_tmp = merge(codeCount, restByZipType, by.x = "VIOLATION.CODE", by.y = "Code", all.x = TRUE)
+        rstByZipType = merge(rstByZipType_tmp, restScoreById,  by.x = "VIOLATION.CODE", by.y = "vioCode", all.x = TRUE)
+        plotData <- rstByZipType[,-c(2,3,4,6)]
+        colnames(plotData) <- c("VIOLATION.CODE", "Resturant Score", "Zip-Type Score")
+        plotData <- plotData %>% gather(key = ScoreType, value = ScoreMean, -VIOLATION.CODE)
+        print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge"))
     })
   })
   
