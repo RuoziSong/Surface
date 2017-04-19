@@ -5,7 +5,6 @@ library(lattice)
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
-
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 set.seed(100)
 zipdata <- data[sample.int(nrow(data), 10000),]
@@ -42,19 +41,7 @@ function(input, output, session) {
   # Precalculate the breaks we'll need for the two histograms
   # centileBreaks <- hist(plot = FALSE, allzips$centile, breaks = 20)$breaks
   # 
-  # output$histCentile <- renderPlot({
-  #   # If no zipcodes are in view, don't plot
-  #   if (nrow(zipsInBounds()) == 0)
-  #     return(NULL)
-  #   
-  #   hist(zipsInBounds()$centile,
-  #        breaks = centileBreaks,
-  #        main = "SuperZIP score (visible zips)",
-  #        xlab = "Percentile",
-  #        xlim = range(allzips$centile),
-  #        col = '#00DD00',
-  #        border = 'white')
-  # })
+  
   # 
   # output$scatterCollegeIncome <- renderPlot({
   #   # If no zipcodes are in view, don't plot
@@ -137,7 +124,7 @@ function(input, output, session) {
       #           layerId="colorLegend")
     }
   })
-
+  
   # Show a popup at the given location
   showResPopup <- function(name, lat, lng) {
     selectedRes <- zipdata[zipdata$CAMIS == name,][1,]
@@ -160,16 +147,15 @@ function(input, output, session) {
       return()
     isolate({
       showResPopup(event$id, event$lat, event$lng)
-      
-      #Show plot1
       output$scorebyTime <- renderPlot({
+        # If no zipcodes are in view, don't plot
         if (is.null(event$id))
           return(NULL)
         restByTime <- restByTimeData[restByTimeData$restID==event$id,]
         print(ggplot(restByTime, aes(x = time, y = score))+geom_line())
       })
-      #Show plot2
       output$scorebyViolationCode <- renderPlot({
+        # If no zipcodes are in view, don't plot
         if (is.null(event$id))
           return(NULL)
         restById = cleanData[cleanData$CAMIS == event$id, ]
@@ -187,6 +173,7 @@ function(input, output, session) {
         colnames(plotData) <- c("VIOLATION.CODE", "Resturant Score", "Zip-Type Score")
         plotData <- plotData %>% gather(key = ScoreType, value = ScoreMean, -VIOLATION.CODE)
         print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge"))
+      })
     })
   })
   
