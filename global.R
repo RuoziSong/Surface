@@ -6,7 +6,9 @@ data$INSPECTION.DATE <- as.Date(data$INSPECTION.DATE, format="%m/%d/%Y")
 data <- data[data[, "lat"] != 0,]
 data <- data[data[, "ing"] != 0,]
 
-# Process data for graph
+most_vio_rt<-data[!is.na(data$VIOLATION.CODE),][data[, "CRITICAL.FLAG"] == "Critical",] %>% count(CUISINE.DESCRIPTION, VIOLATION.CODE) %>%slice(which.max(n))
+most_rt_vio<-data[!is.na(data$CUISINE.DESCRIPTION),][data[, "CRITICAL.FLAG"] == "Critical",] %>% count(VIOLATION.CODE, CUISINE.DESCRIPTION) %>%slice(which.max(n))
+
 cleanData <- data[!is.na(data$SCORE),]
 restByTimeData <- aggregate(cleanData$SCORE, by=list(cleanData$DBA, cleanData$CAMIS, cleanData$INSPECTION.DATE), FUN = mean)
 colnames(restByTimeData) = c("restName", "restID", "time", "score")
