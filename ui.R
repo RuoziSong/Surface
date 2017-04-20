@@ -98,10 +98,10 @@ type <- c(
 )
 
 loc <- c(
-  ANY = "Any",
+  Any = "Any",
   MANHATTAN = "MANHATTAN",
   QUEENS = "QUEENS",
-  ISLAND = "STATEN ISLAND",
+  Staten.ISLAND = "STATEN ISLAND",
   BRONX = "BRONX",
   BROOKLYN = "BROOKLYN"
 )
@@ -189,6 +189,25 @@ navbarPage("Resturant Inspection", id="nav",
                         )
                     )
            ),
+           
+           tabPanel("Analysis - Score by zipcode",
+                    fluidRow(
+                      column(width = 9,
+                             #box(width = NULL, solidHeader = TRUE,
+                                 leafletOutput("zipcodeMap", height=400),
+                             
+                             #box(width=NULL,
+                                 dataTableOutput("zipcodeTable")
+                             ),
+                      
+                      column(width=3,
+                             #box(width=NULL, 
+                                 uiOutput("yearSelect"),
+                                 radioButtons("measure", "Measure",c("Mean"="Mean", "Median"="Median")),
+                                 uiOutput("violationType")
+                             )
+                      )
+                    ),
            
            tabPanel("Analysis",
                     fluidRow(
