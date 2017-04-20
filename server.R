@@ -189,6 +189,41 @@ function(input, output, session) {
         print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge"))
       })
       strCode <- unique(substr(as.character(codeCount$VIOLATION.CODE),1,2))
+      output$codeIcon1 <- renderImage({
+        width  <- session$clientData$output_codeIcon4_width
+        height <- session$clientData$output_codeIcon4_height
+        list(src = './images/blank.png',
+             width = width,
+             height = height)
+      }, deleteFile = FALSE)
+      output$codeIcon2 <- renderImage({
+        width  <- session$clientData$output_codeIcon4_width
+        height <- session$clientData$output_codeIcon4_height
+        list(src = './images/blank.png',
+             width = width,
+             height = height)
+      }, deleteFile = FALSE)
+      output$codeIcon3 <- renderImage({
+        width  <- session$clientData$output_codeIcon4_width
+        height <- session$clientData$output_codeIcon4_height
+        list(src = './images/blank.png',
+             width = width,
+             height = height)
+      }, deleteFile = FALSE)
+      output$codeIcon4 <- renderImage({
+        width  <- session$clientData$output_codeIcon4_width
+        height <- session$clientData$output_codeIcon4_height
+        list(src = './images/blank.png',
+             width = width,
+             height = height)
+      }, deleteFile = FALSE)
+      output$codeIcon5 <- renderImage({
+        width  <- session$clientData$output_codeIcon4_width
+        height <- session$clientData$output_codeIcon4_height
+        list(src = './images/blank.png',
+             width = width,
+             height = height)
+      }, deleteFile = FALSE)
       if(numCode > 0){
         output$codeIcon1 <- renderImage({
           width  <- session$clientData$output_codeIcon1_width
