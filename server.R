@@ -4,7 +4,7 @@ library(scales)
 library(lattice)
 library(dplyr)
 library(ggplot2)
-library(tidyverse)
+library(tidyr)
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 set.seed(100)
 zipdata <- data[sample.int(nrow(data), 10000),]
@@ -60,9 +60,12 @@ function(input, output, session) {
     if (input$type != "Any"){
       tmpdata<-tmpdata[tmpdata[, "CUISINE.DESCRIPTION"] == input$type,]
     }
-    if (!is.null(input$directions)){
+    if (input$directions != "Any"){
       tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
     }
+    # if (!is.null(input$directions)){
+    #   tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
+    # }
     if (input$zipcode!=""){
       tmpdata<-tmpdata[tmpdata[, "ZIPCODE"] == input$zipcode,]
     }
@@ -154,19 +157,29 @@ function(input, output, session) {
         restByTime <- restByTimeData[restByTimeData$restID==event$id,]
         print(ggplot(restByTime, aes(x = time, y = score))+geom_line())
       })
+      restById = cleanData[cleanData$CAMIS == event$id & cleanData$CRITICAL.FLAG == "Critical", ]
+      restScoreById = restByIdData[restByIdData$restId == event$id,]
+      restType = unique(restById$CUISINE.DESCRIPTION)
+      restZip = unique(restById$ZIPCODE)
+      restByZipType = restByZipTypeData[restByZipTypeData$ZipCode==restZip & restByZipTypeData$Type==restType,]
+      codeCount = restById%>%group_by(VIOLATION.CODE) %>% summarise(count=n())
+      codeCount = codeCount[order(-codeCount$count),]
+      if(dim(codeCount)[1] > 5)
+        codeCount = codeCount[1:5,]
+      numCode = dim(codeCount)[1]
       output$scorebyViolationCode <- renderPlot({
         # If no zipcodes are in view, don't plot
-        if (is.null(event$id))
-          return(NULL)
-        restById = cleanData[cleanData$CAMIS == event$id, ]
-        restScoreById = restByIdData[restByIdData$restId == event$id,]
-        restType = unique(restById$CUISINE.DESCRIPTION)
-        restZip = unique(restById$ZIPCODE)
-        restByZipType = restByZipTypeData[restByZipTypeData$ZipCode==restZip & restByZipTypeData$Type==restType,]
-        codeCount = restById%>%group_by(VIOLATION.CODE) %>% summarise(count=n())
-        codeCount = codeCount[order(-codeCount$count),]
-        if(dim(codeCount)[1] > 5)
-          codeCount = codeCount[1:5,]
+        # if (is.null(event$id))
+        #   return(NULL)
+        # restById = cleanData[cleanData$CAMIS == event$id, ]
+        # restScoreById = restByIdData[restByIdData$restId == event$id,]
+        # restType = unique(restById$CUISINE.DESCRIPTION)
+        # restZip = unique(restById$ZIPCODE)
+        # restByZipType = restByZipTypeData[restByZipTypeData$ZipCode==restZip & restByZipTypeData$Type==restType,]
+        # codeCount = restById%>%group_by(VIOLATION.CODE) %>% summarise(count=n())
+        # codeCount = codeCount[order(-codeCount$count),]
+        # if(numCode > 5)
+        #   codeCount = codeCount[1:5,]
         rstByZipType_tmp = merge(codeCount, restByZipType, by.x = "VIOLATION.CODE", by.y = "Code", all.x = TRUE)
         rstByZipType = merge(rstByZipType_tmp, restScoreById,  by.x = "VIOLATION.CODE", by.y = "vioCode", all.x = TRUE)
         plotData <- rstByZipType[,-c(2,3,4,6)]
@@ -174,6 +187,62 @@ function(input, output, session) {
         plotData <- plotData %>% gather(key = ScoreType, value = ScoreMean, -VIOLATION.CODE)
         print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge"))
       })
+      strCode <- unique(substr(as.character(codeCount$VIOLATION.CODE),1,2))
+      if(numCode > 0){
+        output$codeIcon1 <- renderImage({
+          width  <- session$clientData$output_codeIcon1_width
+          height <- session$clientData$output_codeIcon1_height
+          filename1 <- normalizePath(file.path('./images',
+                                              paste('image', strCode[1], '.png', sep='')))
+          list(src = filename1,
+               width = width,
+               height = height)
+        }, deleteFile = FALSE)
+      }
+      if(numCode > 1){
+        output$codeIcon2 <- renderImage({
+          width  <- session$clientData$output_codeIcon2_width
+          height <- session$clientData$output_codeIcon2_height
+          filename2 <- normalizePath(file.path('./images',
+                                              paste('image', strCode[2], '.png', sep='')))
+          list(src = filename2,
+               width = width,
+               height = height)
+        }, deleteFile = FALSE)
+      }
+      if(numCode > 2){
+        output$codeIcon3 <- renderImage({
+          width  <- session$clientData$output_codeIcon3_width
+          height <- session$clientData$output_codeIcon3_height
+          filename3 <- normalizePath(file.path('./images',
+                                              paste('image', strCode[3], '.png', sep='')))
+          list(src = filename3,
+               width = width,
+               height = height)
+        }, deleteFile = FALSE)
+      }
+      if(numCode > 3){
+        output$codeIcon4 <- renderImage({
+          width  <- session$clientData$output_codeIcon4_width
+          height <- session$clientData$output_codeIcon4_height
+          filename4 <- normalizePath(file.path('./images',
+                                              paste('image', strCode[4], '.png', sep='')))
+          list(src = filename4,
+               width = width,
+               height = height)
+        }, deleteFile = FALSE)
+      }
+      if(numCode > 4){
+        output$codeIcon5 <- renderImage({
+          width  <- session$clientData$output_codeIcon5_width
+          height <- session$clientData$output_codeIcon5_height
+          filename5 <- normalizePath(file.path('./images',
+                                              paste('image', strCode[5], '.png', sep='')))
+          list(src = filename5,
+               width = width,
+               height = height)
+        }, deleteFile = FALSE)
+      }
     })
   })
   
@@ -235,4 +304,47 @@ function(input, output, session) {
     
     DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
   })
+  ######### analysis ############
+  observeEvent(input$click2,{
+    output$histCentile <- renderPlot({
+      if (input$analysis_x == "CUISINE.DESCRIPTION"){
+        ggplot(data[which(!is.na(data$CUISINE.DESCRIPTION)),], aes(x = factor(CUISINE.DESCRIPTION, levels = names(sort(table(CUISINE.DESCRIPTION), decreasing = TRUE)))))+ geom_bar(stat='count')+labs(x="Restaurant Type",y="number of inspection",title="Restaurant Type Distribution")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      else if (input$analysis_x == "VIOLATION.CODE"){
+        ggplot(data[which(!is.na(data$VIOLATION.CODE)),], aes(x = factor(VIOLATION.CODE, levels = names(sort(table(VIOLATION.CODE), decreasing = TRUE)))))+ geom_bar(stat='count')+labs(x="Violation Type",y="number of inspection",title="Violation Type Distribution")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      else if (input$analysis_x =="INSPECTION.DATE"){
+        ggplot(data[which(!is.na(data$INSPECTION.DATE)),],aes(INSPECTION.DATE))+geom_histogram(binwidth = 30)+labs(x="Inspection Date",y="number of inspection",title="Violation Type Distribution")
+      }
+      else{
+        return(NULL)
+      }
+    })
+    output$score<- renderPlot({
+      if (input$analysis_x == "CUISINE.DESCRIPTION"){
+        ggplot(aggregate(SCORE~CUISINE.DESCRIPTION, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(-SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Restaurant Type",y="Mean of Score",title="Mean Score of Restaurant Type")
+      }
+      else if (input$analysis_x == "VIOLATION.CODE"){
+        ggplot(aggregate(SCORE~VIOLATION.CODE, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(VIOLATION.CODE, levels = VIOLATION.CODE[order(-SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Violation Type",y="Mean of Score",title="Mean Score of Violation Type")
+      }
+      else{
+        return(NULL)
+      }
+    })
+    output$most_v<- renderPlot({
+      if (input$analysis_x == "CUISINE.DESCRIPTION"){
+        ggplot(most_vio_rt, aes(x = factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(-n)]),y=n))+ geom_bar(stat='identity') +labs(x="Restaurant Type",y="Number of Violation Type",title="The Most Common Violation in Each Restaurant Type")+geom_text(aes(label=VIOLATION.CODE),size=2.5,vjust=-0.5)+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      else if (input$analysis_x == "VIOLATION.CODE"){
+        ggplot(most_rt_vio, aes(x = factor(VIOLATION.CODE, levels = VIOLATION.CODE[order(-n)]),y=n))+ geom_bar(stat='identity') +labs(x="Violation Type",y="Number of Restaurant Type",title="The Most Common Restaurant Type in Each Violation")+geom_text(aes(label=CUISINE.DESCRIPTION),size=2.5,vjust=-0.5)+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      else{
+        return(NULL)
+      }
+    })
+    
+  })
+  
+  ####################
+  
 }
