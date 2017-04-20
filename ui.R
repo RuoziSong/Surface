@@ -98,13 +98,19 @@ type <- c(
 )
 
 loc <- c(
-                       MANHATTAN = "MA",
-                       QUEENS = "QU",
-                       ISLAND = "IS",
-                       BRONX = "BX",
-                       BROOKLYN = "BK"
+  ANY = "Any",
+  MANHATTAN = "MANHATTAN",
+  QUEENS = "QUEENS",
+  ISLAND = "STATEN ISLAND",
+  BRONX = "BRONX",
+  BROOKLYN = "BROOKLYN"
 )
-navbarPage("Superzip", id="nav",
+analysis_obj<-c(
+  "Restaurant Type" = "CUISINE.DESCRIPTION",
+  "Violation Type" = "VIOLATION.CODE",
+  "Time" = "INSPECTION.DATE"
+)
+navbarPage("Resturant Inspection", id="nav",
            
            tabPanel("Interactive map",
                     
@@ -139,14 +145,15 @@ navbarPage("Superzip", id="nav",
                                       textInput(inputId = "restName", "Name"),
                                       textInput(inputId = "zipcode", "Zip Code"),
                                       #selectInput("directions", "Resturant Type", loc),
-                                      checkboxGroupInput(inputId = "directions", "Show",
-                                                         choices = c(
-                                                           MANHATTAN = "MANHATTAN",
-                                                           QUEENS = "QUEENS",
-                                                           ISLAND = "STATEN ISLAND",
-                                                           BRONX = "BRONX",
-                                                           BROOKLYN = "BROOKLYN"
-                                                         )),
+                                      # checkboxGroupInput(inputId = "directions", "Show",
+                                      #                    choices = c(
+                                      #                      MANHATTAN = "MANHATTAN",
+                                      #                      QUEENS = "QUEENS",
+                                      #                      ISLAND = "STATEN ISLAND",
+                                      #                      BRONX = "BRONX",
+                                      #                      BROOKLYN = "BROOKLYN"
+                                      #                    )),
+                                      selectInput(inputId = "directions", "Direction", loc),
                                       selectInput(inputId = "type", "Resturant Type", type),
                                       actionButton(inputId = "click",label = "Search"),
                                       #selectInput("size", "Size", vars, selected = "adultpop"),
@@ -154,38 +161,45 @@ navbarPage("Superzip", id="nav",
                                                        # Only prompt for threshold when coloring or sizing by superzip
                                                        numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
                                       ),
-                                      plotOutput("scatterCollegeIncome", height = 250)
+                                      absolutePanel(id = "icon1", class = "panel panel-default", fixed = TRUE,
+                                                    draggable = TRUE, top = "65%", left = "auto", right = 20, bottom = "26%",
+                                                    width = "25%", height = "auto",
+                                                    imageOutput("codeIcon1", height = "100%", width = "100%")
+                                      ),
+                                      absolutePanel(id = "icon2", class = "panel panel-default", fixed = TRUE,
+                                                    draggable = TRUE, top = "71.5%", left = "auto", right = 20, bottom = "19.5%",
+                                                    width = "25%", height = "auto",
+                                                    imageOutput("codeIcon2", height = "100%", width = "100%")
+                                      ),
+                                      absolutePanel(id = "icon3", class = "panel panel-default", fixed = TRUE,
+                                                    draggable = TRUE, top = "78%", left = "auto", right = 20, bottom = "13%",
+                                                    width = "25%", height = "auto",
+                                                    imageOutput("codeIcon3",height = "100%", width = "100%")
+                                      ),
+                                      absolutePanel(id = "icon4", class = "panel panel-default", fixed = TRUE,
+                                                    draggable = TRUE, top = "84.5%", left = "auto", right = 20, bottom = "6.5%",
+                                                    width = "25%", height = "auto",
+                                                    imageOutput("codeIcon4", height = "100%", width = "100%")
+                                      ),
+                                      absolutePanel(id = "icon5", class = "panel panel-default", fixed = TRUE,
+                                                    draggable = TRUE, top = "91%", left = "auto", right = 20, bottom = "0%",
+                                                    width = "25%", height = "auto",
+                                                    imageOutput("codeIcon5", height = "100%", width = "100%")
+                                      )
                         )
                     )
            ),
            
-           tabPanel("Data explorer",
+           tabPanel("Analysis",
                     fluidRow(
                       column(3,
-                             selectInput("states", "States", c("All states"="", structure(state.abb, names=state.name), "Washington, DC"="DC"), multiple=TRUE)
-                      ),
-                      column(3,
-                             conditionalPanel("input.states",
-                                              selectInput("cities", "Cities", c("All cities"=""), multiple=TRUE)
-                             )
-                      ),
-                      column(3,
-                             conditionalPanel("input.states",
-                                              selectInput("zipcodes", "Zipcodes", c("All zipcodes"=""), multiple=TRUE)
-                             )
+                             selectInput(inputId = "analysis_x", "Analysis Object", analysis_obj)
                       )
                     ),
-                    fluidRow(
-                      column(1,
-                             numericInput("minScore", "Min score", min=0, max=100, value=0)
-                      ),
-                      column(1,
-                             numericInput("maxScore", "Max score", min=0, max=100, value=100)
-                      )
-                    ),
+                    actionButton(inputId = "click2",label = "Plot"),
                     hr(),
-                    DT::dataTableOutput("ziptable")
-           ),
-           
-           conditionalPanel("false", icon("crosshair"))
+                    plotOutput("histCentile", height = 400),
+                    plotOutput("score", height = 400),
+                    plotOutput("most_v", height = 400)
+           )
 )
