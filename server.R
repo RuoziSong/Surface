@@ -5,6 +5,7 @@ library(lattice)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(DT)
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 set.seed(100)
 zipdata <- data[sample.int(nrow(data), 10000),]
@@ -247,63 +248,85 @@ function(input, output, session) {
   })
   
   
-  ## Data Explorer ###########################################
-  
-  observe({
-    cities <- if (is.null(input$states)) character(0) else {
-      filter(cleantable, State %in% input$states) %>%
-        `$`('City') %>%
-        unique() %>%
-        sort()
-    }
-    stillSelected <- isolate(input$cities[input$cities %in% cities])
-    updateSelectInput(session, "cities", choices = cities,
-                      selected = stillSelected)
-  })
-  
-  observe({
-    zipcodes <- if (is.null(input$states)) character(0) else {
-      cleantable %>%
-        filter(State %in% input$states,
-               is.null(input$cities) | City %in% input$cities) %>%
-        `$`('Zipcode') %>%
-        unique() %>%
-        sort()
-    }
-    stillSelected <- isolate(input$zipcodes[input$zipcodes %in% zipcodes])
-    updateSelectInput(session, "zipcodes", choices = zipcodes,
-                      selected = stillSelected)
-  })
-  
-  observe({
-    if (is.null(input$goto))
-      return()
-    isolate({
-      map <- leafletProxy("map")
-      map %>% clearPopups()
-      dist <- 0.5
-      zip <- input$goto$zip
-      lat <- input$goto$lat
-      lng <- input$goto$lng
-      showZipcodePopup(zip, lat, lng)
-      map %>% fitBounds(lng - dist, lat - dist, lng + dist, lat + dist)
-    })
-  })
-  
-  output$ziptable <- DT::renderDataTable({
-    df <- cleantable %>%
-      filter(
-        Score >= input$minScore,
-        Score <= input$maxScore,
-        is.null(input$states) | State %in% input$states,
-        is.null(input$cities) | City %in% input$cities,
-        is.null(input$zipcodes) | Zipcode %in% input$zipcodes
-      ) %>%
-      mutate(Action = paste('<a class="go-map" href="" data-lat="', Lat, '" data-long="', Long, '" data-zip="', Zipcode, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
-    action <- DT::dataTableAjax(session, df)
+  ## Score by zipcode ###########################################
+  getDataSet<-reactive({
+    # Get a subset of the income data which is contingent on the input variables
+    dataSet<-score_zip[score_zip$YEAR == input$dataYear & score_zip$VIOLATION.TYPE == input$violation,c('ZIPCODE','YEAR',input$measure)]
     
-    DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
+    # Copy our GIS data
+    joinedDataset<-zipcodes
+    
+    # Join the two datasets together
+    joinedDataset@data <- suppressWarnings(unique(merge(dataSet,joinedDataset@data,by="ZIPCODE")))
+    joinedDataset
   })
+  
+  # Due to use of leafletProxy below, this should only be called once
+  output$zipcodeMap<-renderLeaflet({
+    
+    leaflet() %>%
+      addTiles() %>%
+      
+      # Centre the map in the middle of our co-ordinates
+      setView(mean(bounds[1,]),
+              mean(bounds[2,]),
+              zoom=10 # set to 10 as 9 is a bit too zoomed out
+      ) %>%
+      addLegend("bottomright",colors=c(pal(0),pal(7),pal(14),pal(21),pal(27),pal(50),pal(maxcolor)), 
+                labels = c('0','|        Grade A','14','|        Grade B','27','|        Grade C', maxcolor),                     
+                title = "Score",
+                opacity = 1
+      )
+    
+  })
+  
+  
+  
+  observe({
+    theData<-getDataSet() 
+    
+    # colour palette mapped to data
+    measure <- input$measure
+    # set text for the clickable popup labels
+    zipcode_popup <- paste0("<strong>Zipcode: </strong>", 
+                            theData@data[,'ZIPCODE'], 
+                            "<br><strong>",
+                            input$measure,
+                            " score: </strong>", 
+                            formatC(theData@data[,measure], format="d", big.mark=',')
+    )
+    # If the data changes, the polygons are cleared and redrawn, however, the map (above) is not redrawn
+    leafletProxy("zipcodeMap", data = theData) %>%
+      clearShapes() %>%
+      addPolygons(data = theData,
+                  fillColor = pal(theData@data[,measure]), 
+                  fillOpacity = 0.8, 
+                  color = "#BDBDC3", 
+                  weight = 2,
+                  popup = zipcode_popup)
+  })
+  
+  # table of results, rendered using data table
+  output$zipcodeTable <- renderDataTable(datatable({
+    dataSet<-getDataSet()
+    measure <- input$measure
+    dataSet<-dataSet@data[,c('ZIPCODE', measure)] # Just get name and value columns
+    dataSet
+  },
+  options = list(lengthMenu = c(5, 10, 30), pageLength = 5))
+  )
+  
+  # year selecter; values based on those present in the dataset
+  output$yearSelect<-renderUI({
+    yearRange<-sort(unique(as.numeric(score_zip$YEAR)), decreasing=TRUE)
+    selectInput("dataYear", "Year", choices=yearRange, selected=yearRange[1])
+  })
+  output$violationType<-renderUI({
+    typeRange<-unique(score_zip$VIOLATION.TYPE)
+    radioButtons("violation", "Violation type",choices=typeRange,selected=typeRange[1])
+  })
+  
+  
   ######### analysis ############
   observeEvent(input$click2,{
     output$histCentile <- renderPlot({
