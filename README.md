@@ -1,8 +1,12 @@
-The script in the `metrotransit-data/` directory will fetch schedule data for the Twin Cities Metro Transit. This data is updated weekly.
+# Restaurant inspection project
 
-The 00-fetch-data.R script should be executed in the `metrotransit-data/` directory. It fetches the data and saves some of the tables as .rds files. The bus app will read in the .rds files for route information.
+## Team member
+- Shengyang Zhang
+- Haiqi Zhu
+- Ruozi Song
 
-Information about schedule data: http://datafinder.org/metadata/transit_schedule_google_feed.html
+We enjoy a lot the great food in New York. But at the same time, we also hope to take sanitation condition into consideration when we decide where to eat. Unfortunately, commercial apps like Yelp don’t include this information probably becaurse of its commercial purpose. Thus we came up with idea to use interactive data visualization to enable consumers know more about sanitation condition of restaurants in New York.
 
-Data format reference: https://developers.google.com/transit/gtfs/reference?csw=1
-Shared codes for Surface
+By generating the interactive maps about restaurant sanitation inspection performance in New York City, we are able to see both individual and aggregate level of restaurtant performance. Please read our main results in file.
+
+All the data can be downloaded here <https://www.dropbox.com/sh/xgeo9fpmti6kbb2/AACj7_UQxXgWwPPkhlsYCQaXa?dl=0>. Our restaurant inspection data is from NYC open data (here <https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/xx67-kt59/data>). The zipcode boundaries data used in our analysis is from here <https://data.cityofnewyork.us/Business/Zip-Code-Boundaries/i8iw-xf4u/data>.
