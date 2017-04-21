@@ -6,14 +6,15 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(DT)
-# Leaflet bindings are a bit slow; for now we'll just sample to compensate
+
+
 set.seed(100)
-zipdata <- data[sample.int(nrow(data), 10000),]
+zipdata <- data
 
 
 function(input, output, session) {
   
-  ## Interactive Map ###########################################
+  ## Restaurant Locator panel ###########################################
   
   # Create the map
   output$map <- renderLeaflet({
@@ -39,23 +40,7 @@ function(input, output, session) {
              longitude >= lngRng[1] & longitude <= lngRng[2])
   })
   
-  # Precalculate the breaks we'll need for the two histograms
-  # centileBreaks <- hist(plot = FALSE, allzips$centile, breaks = 20)$breaks
-  # 
-  
-  # 
-  # output$scatterCollegeIncome <- renderPlot({
-  #   # If no zipcodes are in view, don't plot
-  #   if (nrow(zipsInBounds()) == 0)
-  #     return(NULL)
-  #   
-  #   print(xyplot(income ~ college, data = zipsInBounds(), xlim = range(allzips$college), ylim = range(allzips$income)))
-  # })
-  
-  # This observer is responsible for maintaining the circles and legend,
-  # according to the variables the user has chosen to map to color and size.
-  
-  
+  # generate interacitve map
   observeEvent(input$click,{
     tmpdata<- zipdata
     if (input$type != "Any"){
@@ -64,9 +49,6 @@ function(input, output, session) {
     if (input$directions != "Any"){
       tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
     }
-    # if (!is.null(input$directions)){
-    #   tmpdata <- subset(tmpdata,is.element(tmpdata[,"BORO"],input$directions))
-    # }
     if (input$zipcode!=""){
       tmpdata<-tmpdata[tmpdata[, "ZIPCODE"] == input$zipcode,]
     }
@@ -84,21 +66,6 @@ function(input, output, session) {
       })
     }
     else{
-      # Color and palette are treated specially in the "superzip" case, because
-      # the values are categorical instead of continuous.
-      # colorData <- ifelse(zipdata$centile >= (100 - input$threshold), "yes", "no")
-      # pal <- colorFactor("viridis", colorData)
-      
-      #colorData <- zipdata[[locationBy]]
-      #pal <- colorBin("viridis", colorData, 7, pretty = FALSE)
-      # 
-      # 
-      # if (sizeBy == "superzip") {
-      #   # Radius is treated specially in the "superzip" case.
-      #   radius <- ifelse(zipdata$centile >= (100 - input$threshold), 30000, 3000)
-      # } else {
-      #   radius <- zipdata[[sizeBy]] / max(zipdata[[sizeBy]]) * 30000
-      # }
       output$map <- renderLeaflet({
         leaflet() %>%
           addTiles(
@@ -122,10 +89,6 @@ function(input, output, session) {
         clearShapes() %>%
         clearMarkers() %>%
         addMarkers(~ing, ~lat,layerId=~CAMIS)
-      #addCircles(~ing, ~lat, radius=100, layerId=~ZIPCODE,stroke=FALSE, fillOpacity=0.4)
-      #            stroke=FALSE, fillOpacity=0.4) %>%
-      # addLegend("bottomleft", pal=pal, values=colorData, title=colorBy,
-      #           layerId="colorLegend")
     }
   })
   
@@ -143,7 +106,7 @@ function(input, output, session) {
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = name)
   }
   
-  # When map is clicked, show a popup with city info
+  # When map is clicked, show historical inspection record for the corresponding restaurant
   observe({
     leafletProxy("map") %>% clearPopups()
     event <- input$map_marker_click
@@ -156,7 +119,7 @@ function(input, output, session) {
         if (is.null(event$id))
           return(NULL)
         restByTime <- restByTimeData[restByTimeData$restID==event$id,]
-        print(ggplot(restByTime, aes(x = time, y = score))+geom_line())
+        print(ggplot(restByTime, aes(x = time, y = score))+geom_line()+ggtitle("Historical inspection scores"))
       })
       restById = cleanData[cleanData$CAMIS == event$id & cleanData$CRITICAL.FLAG == "Critical", ]
       restScoreById = restByIdData[restByIdData$restId == event$id,]
@@ -169,24 +132,12 @@ function(input, output, session) {
         codeCount = codeCount[1:5,]
       numCode = dim(codeCount)[1]
       output$scorebyViolationCode <- renderPlot({
-        # If no zipcodes are in view, don't plot
-        # if (is.null(event$id))
-        #   return(NULL)
-        # restById = cleanData[cleanData$CAMIS == event$id, ]
-        # restScoreById = restByIdData[restByIdData$restId == event$id,]
-        # restType = unique(restById$CUISINE.DESCRIPTION)
-        # restZip = unique(restById$ZIPCODE)
-        # restByZipType = restByZipTypeData[restByZipTypeData$ZipCode==restZip & restByZipTypeData$Type==restType,]
-        # codeCount = restById%>%group_by(VIOLATION.CODE) %>% summarise(count=n())
-        # codeCount = codeCount[order(-codeCount$count),]
-        # if(numCode > 5)
-        #   codeCount = codeCount[1:5,]
         rstByZipType_tmp = merge(codeCount, restByZipType, by.x = "VIOLATION.CODE", by.y = "Code", all.x = TRUE)
         rstByZipType = merge(rstByZipType_tmp, restScoreById,  by.x = "VIOLATION.CODE", by.y = "vioCode", all.x = TRUE)
         plotData <- rstByZipType[,-c(2,3,4,6)]
-        colnames(plotData) <- c("VIOLATION.CODE", "Resturant Score", "Zip-Type Score")
+        colnames(plotData) <- c("VIOLATION.CODE", "Resturant Score", "Mean score in this zipcode area")
         plotData <- plotData %>% gather(key = ScoreType, value = ScoreMean, -VIOLATION.CODE)
-        print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge"))
+        print(ggplot(plotData, aes(x = VIOLATION.CODE, y = ScoreMean, fill = ScoreType))+geom_bar(stat = "identity", position = "dodge")+ggtitle("Top 5 worst inspection scores and corresponding violations"))
       })
       strCode <- unique(substr(as.character(codeCount$VIOLATION.CODE),1,2))
       output$codeIcon1 <- renderImage({
@@ -283,12 +234,12 @@ function(input, output, session) {
   })
   
   
-  ## Score by zipcode ###########################################
+  ## Analysis - Inspection score by zipcode ###########################################
   getDataSet<-reactive({
-    # Get a subset of the income data which is contingent on the input variables
+    # Get a subset of the data which is contingent on the input variables
     dataSet<-score_zip[score_zip$YEAR == input$dataYear & score_zip$VIOLATION.TYPE == input$violation,c('ZIPCODE','YEAR',input$measure)]
-    
-    # Copy our GIS data
+   
+    # Copy GIS data
     joinedDataset<-zipcodes
     
     # Join the two datasets together
@@ -309,12 +260,11 @@ function(input, output, session) {
       ) %>%
       addLegend("bottomright",colors=c(pal(0),pal(7),pal(14),pal(21),pal(27),pal(50),pal(maxcolor)), 
                 labels = c('0','|        Grade A','14','|        Grade B','27','|        Grade C', maxcolor),                     
-                title = "Score",
+                title = "Inspection score",
                 opacity = 1
       )
     
   })
-  
   
   
   observe({
@@ -323,13 +273,13 @@ function(input, output, session) {
     # colour palette mapped to data
     measure <- input$measure
     # set text for the clickable popup labels
-    zipcode_popup <- paste0("<strong>Zipcode: </strong>", 
-                            theData@data[,'ZIPCODE'], 
-                            "<br><strong>",
-                            input$measure,
-                            " score: </strong>", 
-                            formatC(theData@data[,measure], format="d", big.mark=',')
-    )
+    # zipcode_popup <- paste0("<strong>Zipcode: </strong>", 
+    #                         theData@data[,'ZIPCODE'], 
+    #                         "<br><strong>",
+    #                         input$measure,
+    #                         " score: </strong>", 
+    #                         formatC(theData@data[,measure], format="d", big.mark=',')
+    # )
     # If the data changes, the polygons are cleared and redrawn, however, the map (above) is not redrawn
     leafletProxy("zipcodeMap", data = theData) %>%
       clearShapes() %>%
@@ -337,12 +287,12 @@ function(input, output, session) {
                   fillColor = pal(theData@data[,measure]), 
                   fillOpacity = 0.8, 
                   color = "#BDBDC3", 
-                  weight = 2,
-                  popup = zipcode_popup)
+                  weight = 2)
+                  #popup = zipcode_popup)
   })
   
   # table of results, rendered using data table
-  output$zipcodeTable <- renderDataTable(datatable({
+  output$zipcodeTable <- DT::renderDataTable(datatable({
     dataSet<-getDataSet()
     measure <- input$measure
     dataSet<-dataSet@data[,c('ZIPCODE', measure)] # Just get name and value columns
@@ -362,7 +312,7 @@ function(input, output, session) {
   })
   
   
-  ######### analysis ############
+  ### Analysis - others #########################
   observeEvent(input$click2,{
     output$histCentile <- renderPlot({
       if (input$analysis_x == "CUISINE.DESCRIPTION"){
@@ -372,7 +322,7 @@ function(input, output, session) {
         ggplot(data[which(!is.na(data$VIOLATION.CODE)),], aes(x = factor(VIOLATION.CODE, levels = names(sort(table(VIOLATION.CODE), decreasing = TRUE)))))+ geom_bar(stat='count')+labs(x="Violation Type",y="number of inspection",title="Violation Type Distribution")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
       }
       else if (input$analysis_x =="INSPECTION.DATE"){
-        ggplot(data[which(!is.na(data$INSPECTION.DATE)),],aes(INSPECTION.DATE))+geom_histogram(binwidth = 30)+labs(x="Inspection Date",y="number of inspection",title="Violation Type Distribution")
+        ggplot(data[which(!is.na(data$INSPECTION.DATE)),],aes(INSPECTION.DATE))+geom_histogram(binwidth = 30)+labs(x="Inspection Date",y="number of inspection",title="Number of inspections over time")
       }
       else{
         return(NULL)
@@ -380,10 +330,10 @@ function(input, output, session) {
     })
     output$score<- renderPlot({
       if (input$analysis_x == "CUISINE.DESCRIPTION"){
-        ggplot(aggregate(SCORE~CUISINE.DESCRIPTION, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(-SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Restaurant Type",y="Mean of Score",title="Mean Score of Restaurant Type")
+        ggplot(aggregate(SCORE~CUISINE.DESCRIPTION, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Restaurant Type",y="Mean of Score",title="Mean Score of Restaurant Type")
       }
       else if (input$analysis_x == "VIOLATION.CODE"){
-        ggplot(aggregate(SCORE~VIOLATION.CODE, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(VIOLATION.CODE, levels = VIOLATION.CODE[order(-SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Violation Type",y="Mean of Score",title="Mean Score of Violation Type")
+        ggplot(aggregate(SCORE~VIOLATION.CODE, data[which(!is.na(data$SCORE)),], mean),aes(x=factor(VIOLATION.CODE, levels = VIOLATION.CODE[order(SCORE)]),y=SCORE))+geom_bar(stat="identity")+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+labs(x="Violation Type",y="Mean of Score",title="Mean Score of Violation Type")
       }
       else{
         return(NULL)
@@ -391,10 +341,7 @@ function(input, output, session) {
     })
     output$most_v<- renderPlot({
       if (input$analysis_x == "CUISINE.DESCRIPTION"){
-        ggplot(most_vio_rt, aes(x = factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(-n)]),y=n))+ geom_bar(stat='identity') +labs(x="Restaurant Type",y="Number of Violation Type",title="The Most Common Violation in Each Restaurant Type")+geom_text(aes(label=VIOLATION.CODE),size=2.5,vjust=-0.5)+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      }
-      else if (input$analysis_x == "VIOLATION.CODE"){
-        ggplot(most_rt_vio, aes(x = factor(VIOLATION.CODE, levels = VIOLATION.CODE[order(-n)]),y=n))+ geom_bar(stat='identity') +labs(x="Violation Type",y="Number of Restaurant Type",title="The Most Common Restaurant Type in Each Violation")+geom_text(aes(label=CUISINE.DESCRIPTION),size=2.5,vjust=-0.5)+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        ggplot(most_vio_rt, aes(x = factor(CUISINE.DESCRIPTION, levels = CUISINE.DESCRIPTION[order(-n)]),y=n))+ geom_bar(stat='identity') +labs(x="Restaurant Type",y="Number of Violation Type",title="The Most Common Violation in Each Restaurant Type")+geom_text(aes(label=VIOLATION.CODE),size=2.5,angle = 90,hjust=-0.25)+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
       }
       else{
         return(NULL)
@@ -402,7 +349,6 @@ function(input, output, session) {
     })
     
   })
-  
-  ####################
+
   
 }

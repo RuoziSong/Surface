@@ -1,0 +1,11 @@
+name: Surface
+title: Surface
+account: surface-eda
+server: shinyapps.io
+appId: 173918
+bundleId: 797753
+url: https://surface-eda.shinyapps.io/Surface/
+when: 1492738848.57864
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: dependencies.R|geoclient.py|README.md

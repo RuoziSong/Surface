@@ -1,4 +1,5 @@
 library(leaflet)
+library(DT)
 
 # Choices for drop-downs
 vars <- c(
@@ -105,14 +106,17 @@ loc <- c(
   BRONX = "BRONX",
   BROOKLYN = "BROOKLYN"
 )
+
 analysis_obj<-c(
   "Restaurant Type" = "CUISINE.DESCRIPTION",
-  "Violation Type" = "VIOLATION.CODE",
+  "Critical Violation Type" = "VIOLATION.CODE",
   "Time" = "INSPECTION.DATE"
 )
-navbarPage("Resturant Inspection", id="nav",
+
+navbarPage("Restaurant Inspection", id="nav",
            
-           tabPanel("Interactive map",
+           # First panel
+           tabPanel("Restaurant locator",
                     
                     div(class="outer",
                         
@@ -123,6 +127,8 @@ navbarPage("Resturant Inspection", id="nav",
                         ),
                         
                         leafletOutput("map", width="70%", height="60%"),
+                        strong("   Please click on individual resaurant on the map to get restaurant information and its historical inspection performance!"),
+                        br(),
                         absolutePanel(id = "pic1", class = "panel panel-default", fixed = TRUE,
                                       draggable = TRUE, top = "65%", left = "1%", right = "auto", bottom = "1%",
                                       width = "32%", height = "auto",
@@ -134,33 +140,24 @@ navbarPage("Resturant Inspection", id="nav",
                                       plotOutput("scorebyViolationCode", height = 200)
                         ),
                         
-                        # Shiny versions prior to 0.11 should use class="modal" instead.
                         absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                                       draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                                       width = "25%", height = "auto",
                                       
-                                      h2("ZIP explorer"),
+                                      h2("Restaurant locator"),
                                       
-                                      #selectInput("color", "Color", vars),
+                                     
                                       textInput(inputId = "restName", "Name"),
                                       textInput(inputId = "zipcode", "Zip Code"),
-                                      #selectInput("directions", "Resturant Type", loc),
-                                      # checkboxGroupInput(inputId = "directions", "Show",
-                                      #                    choices = c(
-                                      #                      MANHATTAN = "MANHATTAN",
-                                      #                      QUEENS = "QUEENS",
-                                      #                      ISLAND = "STATEN ISLAND",
-                                      #                      BRONX = "BRONX",
-                                      #                      BROOKLYN = "BROOKLYN"
-                                      #                    )),
+                                     
                                       selectInput(inputId = "directions", "Direction", loc),
                                       selectInput(inputId = "type", "Resturant Type", type),
                                       actionButton(inputId = "click",label = "Search"),
-                                      #selectInput("size", "Size", vars, selected = "adultpop"),
                                       conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
                                                        # Only prompt for threshold when coloring or sizing by superzip
                                                        numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
                                       ),
+ 
                                       absolutePanel(id = "icon1", class = "panel panel-default", fixed = TRUE,
                                                     draggable = TRUE, top = "65%", left = "auto", right = 20, bottom = "26%",
                                                     width = "25%", height = "auto",
@@ -190,14 +187,16 @@ navbarPage("Resturant Inspection", id="nav",
                     )
            ),
            
-           tabPanel("Analysis - Score by zipcode",
+           
+           # Second panel
+           tabPanel("Analysis - Inspection score by zipcode",
                     fluidRow(
                       column(width = 9,
                              #box(width = NULL, solidHeader = TRUE,
                                  leafletOutput("zipcodeMap", height=400),
                              
                              #box(width=NULL,
-                                 dataTableOutput("zipcodeTable")
+                                 DT::dataTableOutput("zipcodeTable")
                              ),
                       
                       column(width=3,
@@ -209,7 +208,9 @@ navbarPage("Resturant Inspection", id="nav",
                       )
                     ),
            
-           tabPanel("Analysis",
+           
+           # Third panel
+           tabPanel("Analysis - others",
                     fluidRow(
                       column(3,
                              selectInput(inputId = "analysis_x", "Analysis Object", analysis_obj)
