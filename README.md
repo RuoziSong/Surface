@@ -13,4 +13,4 @@ The data folder can be downloaded from [here](https://www.dropbox.com/sh/xgeo9fp
 
 The Shiny app can be found [here](https://surface-eda.shinyapps.io/Surface/).
 
-Our original restaurant inspection data is from NYC open data ([here](https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/xx67-kt59/data). The zipcode boundaries data used in our analysis is from [here](https://data.cityofnewyork.us/Business/Zip-Code-Boundaries/i8iw-xf4u/data).
+Our original restaurant inspection data is from NYC open data ([here](https://data.cityofnewyork.us/Health/DOHMH-New-York-City-Restaurant-Inspection-Results/xx67-kt59/data)). The zipcode boundaries data used in our analysis is from [here](https://data.cityofnewyork.us/Business/Zip-Code-Boundaries/i8iw-xf4u/data).
